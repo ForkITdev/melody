@@ -97,6 +97,34 @@ func New() *Melody {
 	}
 }
 
+// New creates a new melody instance with default Upgrader and supplied Config
+func NewWithConfig(c *Config) *Melody {
+	upgrader := &websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     func(r *http.Request) bool { return true },
+	}
+
+	hub := newHub()
+
+	go hub.run()
+
+	return &Melody{
+		Config:                   c,
+		Upgrader:                 upgrader,
+		messageHandler:           func(*Session, []byte) {},
+		messageHandlerBinary:     func(*Session, []byte) {},
+		messageSentHandler:       func(*Session, []byte) {},
+		messageSentHandlerBinary: func(*Session, []byte) {},
+		errorHandler:             func(*Session, error) {},
+		closeHandler:             nil,
+		connectHandler:           func(*Session) {},
+		disconnectHandler:        func(*Session) {},
+		pongHandler:              func(*Session) {},
+		hub:                      hub,
+	}
+}
+
 // HandleConnect fires fn when a session connects.
 func (m *Melody) HandleConnect(fn func(*Session)) {
 	m.connectHandler = fn
